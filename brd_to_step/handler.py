@@ -18,6 +18,8 @@ def lambda_handler(event, context):
     #get data from request/event
     s3_bucket = event.get('s3_bucket')
     s3_object = event.get('s3_object')
+    
+    s3_board = event.get( 's3_board' )
 
     #check event params
     if not s3_bucket:
@@ -25,9 +27,14 @@ def lambda_handler(event, context):
 
     if not s3_object:
         raise ConversionError('No s3_object provided')
+        
+    if not s3_board:
+        raise ConversionError('No s3_board provided')
 
     #create local path
     local_step = '/tmp/' + os.path.basename(s3_object)
+    
+    local_board = '/tmp/' + os.path.basename(s3_board)
     
 
     #init s3 object to help with s3 get/put
@@ -39,6 +46,8 @@ def lambda_handler(event, context):
 
     #get step from s3. put in local tmp
     s3.get_object(s3_bucket, s3_object, local_step)
+    
+    s3.get_object(s3_bucket, s3_board, local_board)
 
     #create stl file name from step file name
     stl_file = os.path.splitext(local_step)[0] + '.stl'
@@ -52,7 +61,7 @@ def lambda_handler(event, context):
 
     #build step
     step_file = '/tmp/brd.step'
-    build( step_file )
+    build( local_board, step_file )
 
     #creates prefix/path to put stl file in s3
     s3_key = STL_KEY_PREFIX + os.path.basename(stl_file)
